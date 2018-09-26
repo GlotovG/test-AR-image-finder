@@ -24,7 +24,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         sceneView.showsStatistics = true
         
         // Create a new scene
-        let scene = SCNScene(named: "art.scnassets/ship.scn")!
+        let scene = SCNScene()
         
         // Set the scene to the view
         sceneView.scene = scene
@@ -36,6 +36,12 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         // Create a session configuration
         let configuration = ARWorldTrackingConfiguration()
 
+        //указали картинки для AR
+        let referenceImages = ARReferenceImage.referenceImages(inGroupNamed: "AR Resources",
+                                                               bundle: nil)!
+        //добавили картинки в конфигурацию AR
+        configuration.detectionImages = referenceImages
+        
         // Run the view's session
         sceneView.session.run(configuration)
     }
@@ -57,6 +63,46 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         return node
     }
 */
+    
+    func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
+        
+        guard let imageAnchor = anchor as? ARImageAnchor else {
+            return
+        }
+        
+        print("Я нашел одну из картинок, а именно:\(String(describing: imageAnchor.referenceImage.name!))")
+        
+        switch anchor {
+        case let imageAncor as ARImageAnchor:
+            nodeAdded(node, for: imageAncor)
+        case let planeAncor as ARPlaneAnchor:
+            nodeAdded(node, for: planeAncor)
+        default:
+            print("Нашли якорь, но это не плоскость и не картинка")
+        }
+    }
+    
+    func nodeAdded(_ node: SCNNode, for imageAncor: ARImageAnchor) {
+        let referenceImage = imageAncor.referenceImage
+        
+        let plane = SCNPlane(
+            width: referenceImage.physicalSize.width,
+            height: referenceImage.physicalSize.height
+        )
+        
+        plane.firstMaterial?.diffuse.contents = #colorLiteral(red: 0, green: 0.4784313725, blue: 1, alpha: 1)
+        
+        let planeNode = SCNNode(geometry: plane)
+        planeNode.opacity = 0.25
+        planeNode.eulerAngles.x = -Float.pi / 2
+        
+        node.addChildNode(planeNode)
+    }
+    
+    func nodeAdded(_ node: SCNNode, for planAncor: ARPlaneAnchor) {
+        
+    }
+    
     
     func session(_ session: ARSession, didFailWithError error: Error) {
         // Present an error message to the user
